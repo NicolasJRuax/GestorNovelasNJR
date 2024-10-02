@@ -1,0 +1,66 @@
+@startuml
+package com.myproyect.gestionnovelas {
+    class MainActivity {
+        - buttonAddBook: Button
+        - recyclerView: RecyclerView
+        - novelViewModel: NovelViewModel
+        - novelAdapter: NovelAdapter
+        + onCreate(savedInstanceState: Bundle)
+        + showAddNovelDialog()
+        + onDeleteClick(novel: Novel)
+    }
+
+    class Novel {
+        - id: int
+        - title: String
+        - author: String
+        - year: int
+        - synopsis: String
+        + getId(): int
+        + getTitle(): String
+        + getAuthor(): String
+        + getYear(): int
+        + getSynopsis(): String
+        + setId(id: int)
+    }
+
+    class NovelDao {
+        + insert(novel: Novel)
+        + delete(novel: Novel)
+        + update(novel: Novel)
+        + getAllNovels(): LiveData<List<Novel>>
+    }
+
+    class NovelRepository {
+        - novelDao: NovelDao
+        - allNovels: LiveData<List<Novel>>
+        + insert(novel: Novel)
+        + delete(novel: Novel)
+        + update(novel: Novel)
+        + getAllNovels(): LiveData<List<Novel>>
+    }
+
+    class NovelViewModel {
+        - repository: NovelRepository
+        - allNovels: LiveData<List<Novel>>
+        + insert(novel: Novel)
+        + update(novel: Novel)
+        + delete(novel: Novel)
+        + getAllNovels(): LiveData<List<Novel>>
+    }
+
+    class NovelAdapter {
+        - novels: List<Novel>
+        - deleteListener: OnDeleteClickListener
+        - context: Context
+        + onCreateViewHolder(parent: ViewGroup, viewType: int): NovelHolder
+        + onBindViewHolder(holder: NovelHolder, position: int)
+        + getItemCount(): int
+        + setNovels(novels: List<Novel>)
+    }
+
+    interface OnDeleteClickListener {
+        + onDeleteClick(novel: Novel)
+    }
+}
+@enduml

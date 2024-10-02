@@ -1,4 +1,4 @@
-package com.myproyect.gestornovelasnjr.Novelas;
+package com.myproyect.gestornovelasnjr.gestor_novelas.Novelas;
 
 
 

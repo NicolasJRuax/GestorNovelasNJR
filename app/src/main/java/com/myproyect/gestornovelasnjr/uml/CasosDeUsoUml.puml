@@ -1,0 +1,12 @@
+@startuml
+actor User
+User -> MainActivity : Open App
+User -> MainActivity : Click "Agregar"
+User -> MainActivity : Enter details
+User -> MainActivity : Click "Agregar" (save)
+User -> MainActivity : Select a novel
+User -> MainActivity : Click "Eliminar" (delete)
+User -> MainActivity : Confirm deletion
+User -> MainActivity : Click "Detalles"
+MainActivity -> Novel : Show details
+@enduml
