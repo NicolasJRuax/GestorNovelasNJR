@@ -1,45 +1,136 @@
 package com.myproyect.gestornovelasnjr.gestor_novelas;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
-
 import com.myproyect.gestornovelasnjr.R;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.Novel;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.NovelAdapter;
+import com.myproyect.gestornovelasnjr.gestor_novelas.Sync.SyncAlarmReceiver;
+import com.myproyect.gestornovelasnjr.gestor_novelas.Sync.SyncDataTask;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.NovelViewModel;
 
-public class MainActivity extends AppCompatActivity implements NovelAdapter.OnDeleteClickListener {
+import java.util.ArrayList;
+import java.util.List;
 
-    private Button buttonAddBook;
+public class MainActivity extends AppCompatActivity {
+
+    private Button buttonAddBook, buttonSyncData;
     private RecyclerView recyclerView;
-    private NovelViewModel novelViewModel;
     private NovelAdapter novelAdapter;
+    private NovelViewModel novelViewModel;
+    private BroadcastReceiver syncReceiver;
 
+
+    private void scheduleSyncAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, SyncAlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        long interval = AlarmManager.INTERVAL_HALF_DAY; // Cada 12 horas
+        long triggerAtMillis = System.currentTimeMillis() + interval;
+
+        alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, triggerAtMillis, interval, pendingIntent);
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        buttonAddBook = findViewById(R.id.buttonAddBook);
+        buttonSyncData = findViewById(R.id.buttonSyncData);
+        recyclerView = findViewById(R.id.recyclerView);
+
+        // Configurar RecyclerView
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+        novelAdapter = new NovelAdapter(this, novel -> {
+            // Eliminar novela al hacer clic en el botón eliminar
+            novelViewModel.delete(novel);
+            Toast.makeText(this, "Novela eliminada: " + novel.getTitle(), Toast.LENGTH_SHORT).show();
+        });
+        recyclerView.setAdapter(novelAdapter);
+
+        // Obtener ViewModel
+        novelViewModel = new ViewModelProvider(this).get(NovelViewModel.class);
+
+        // Observar los cambios en la lista de novelas
+        novelViewModel.getAllNovels().observe(this, novels -> {
+            if (novels != null) {
+                novelAdapter.setNovels(novels);
+            }
+        });
+
+        // Registrar receptor de sincronización
+        syncReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent != null && intent.hasExtra("novels")) {
+                    ArrayList<Novel> syncedNovels = intent.getParcelableArrayListExtra("novels");
+                    if (syncedNovels != null) {
+                        novelAdapter.setNovels(syncedNovels);
+                    }
+
+                    novelAdapter.setNovels(syncedNovels);
+                    Toast.makeText(context, "Sincronización completada", Toast.LENGTH_SHORT).show();
+                    scheduleSyncAlarm();
+                }
+            }
+        };
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(syncReceiver, new IntentFilter("com.myproyect.gestornovelasnjr.SYNC_COMPLETE"), Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(syncReceiver, new IntentFilter("com.myproyect.gestornovelasnjr.SYNC_COMPLETE"));
+        }
+
+        // Botón para agregar una nueva novela
+        buttonAddBook.setOnClickListener(v -> showAddNovelDialog());
+
+        // Botón para sincronizar datos
+        buttonSyncData.setOnClickListener(v -> {
+            Toast.makeText(MainActivity.this, "Sincronizando datos...", Toast.LENGTH_SHORT).show();
+            new SyncDataTask(MainActivity.this).execute();
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(syncReceiver); // Desregistrar el receptor al destruir la actividad
+    }
+
+    // Método para mostrar el diálogo de agregar novela
     private void showAddNovelDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.dialog_add_novel, null);
-        builder.setView(dialogView);
+        builder.setTitle("Agregar Novela");
 
-        EditText editTextTitle = dialogView.findViewById(R.id.editTextTitle);
-        EditText editTextAuthor = dialogView.findViewById(R.id.editTextAuthor);
-        EditText editTextYear = dialogView.findViewById(R.id.editTextYear);
-        EditText editTextSynopsis = dialogView.findViewById(R.id.editTextSynopsis);
-        Button buttonAddNovel = dialogView.findViewById(R.id.buttonAddNovel);
+        final View customLayout = getLayoutInflater().inflate(R.layout.dialog_add_novel, null);
+        builder.setView(customLayout);
 
-        AlertDialog dialog = builder.create();
+        builder.setPositiveButton("Agregar", (dialog, which) -> {
+            // Obtener los datos del diálogo
+            EditText editTextTitle = customLayout.findViewById(R.id.editTextTitle);
+            EditText editTextAuthor = customLayout.findViewById(R.id.editTextAuthor);
+            EditText editTextYear = customLayout.findViewById(R.id.editTextYear);
+            EditText editTextSynopsis = customLayout.findViewById(R.id.editTextSynopsis);
 
-        buttonAddNovel.setOnClickListener(v -> {
             String title = editTextTitle.getText().toString();
             String author = editTextAuthor.getText().toString();
             int year;
@@ -52,51 +143,21 @@ public class MainActivity extends AppCompatActivity implements NovelAdapter.OnDe
             String synopsis = editTextSynopsis.getText().toString();
 
             if (!title.isEmpty() && !author.isEmpty() && year > 0 && !synopsis.isEmpty()) {
+                // Crear la nueva novela
                 Novel novel = new Novel(title, author, year, synopsis);
-                novelViewModel.insert(novel);
+                novelViewModel.insert(novel); // Insertar la novela en la base de datos
                 Toast.makeText(MainActivity.this, "Novela añadida", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
             } else {
                 Toast.makeText(MainActivity.this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
             }
         });
 
-        dialog.show();
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
+
+        // Mostrar el diálogo
+        builder.create().show();
     }
-
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        buttonAddBook = findViewById(R.id.buttonAddBook);
-        recyclerView = findViewById(R.id.recyclerView);
-
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setHasFixedSize(true);
-
-        novelAdapter = new NovelAdapter(this, this);
-        recyclerView.setAdapter(novelAdapter);
-
-        novelViewModel = new ViewModelProvider(this).get(NovelViewModel.class);
-
-        novelViewModel.getAllNovels().observe(this, novels -> novelAdapter.setNovels(novels));
-
-        buttonAddBook.setOnClickListener(v -> showAddNovelDialog());
-    }
-
-    @Override
-    public void onDeleteClick(Novel novel) {
-        new AlertDialog.Builder(this)
-                .setTitle("Eliminar Novela")
-                .setMessage("¿Estás seguro de que deseas eliminar esta novela?")
-                .setPositiveButton("Sí", (dialog, which) -> {
-                    novelViewModel.delete(novel);
-                    Toast.makeText(this, "Novela eliminada", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("No", null)
-                .show();
-    }
-
 }
+
+
+
