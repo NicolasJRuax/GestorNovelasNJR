@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.app.AlertDialog;
 
-import com.myproyect.gestionnovelas.R;
+import com.myproyect.gestornovelasnjr.R;
 
 import java.util.ArrayList;
 import java.util.List;

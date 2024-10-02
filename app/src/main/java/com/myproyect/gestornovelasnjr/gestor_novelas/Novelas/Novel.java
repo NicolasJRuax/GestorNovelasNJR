@@ -1,19 +1,19 @@
 package com.myproyect.gestornovelasnjr.gestor_novelas.Novelas;
 
 
+import com.google.firebase.firestore.Exclude;
 
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
-
-@Entity(tableName = "novel_table")
 public class Novel {
-    @PrimaryKey(autoGenerate = true)
-    private int id;
+    @Exclude
+    private String id; // Excluir este campo si no lo necesitas en Firestore
 
     private String title;
     private String author;
     private int year;
     private String synopsis;
+
+    // Constructor vacío para Firestore
+    public Novel() {}
 
     public Novel(String title, String author, int year, String synopsis) {
         this.title = title;
@@ -22,11 +22,8 @@ public class Novel {
         this.synopsis = synopsis;
     }
 
-    public int getId() { return id; }
     public String getTitle() { return title; }
     public String getAuthor() { return author; }
     public int getYear() { return year; }
     public String getSynopsis() { return synopsis; }
-
-    public void setId(int id) { this.id = id; }
 }

@@ -13,19 +13,12 @@ public class NovelViewModel extends AndroidViewModel {
 
     public NovelViewModel(@NonNull Application application) {
         super(application);
-        repository = new NovelRepository(application);
+        repository = new NovelRepository();
         allNovels = repository.getAllNovels();
-
     }
-
-
 
     public void insert(Novel novel) {
         repository.insert(novel);
-    }
-
-    public void update(Novel novel) {
-        repository.delete(novel);
     }
 
     public void delete(Novel novel) {

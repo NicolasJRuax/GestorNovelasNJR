@@ -1,77 +1,56 @@
 package com.myproyect.gestornovelasnjr.gestor_novelas.Novelas;
 
 
-import android.app.Application;
-import android.os.AsyncTask;
+import android.util.Log;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
-import com.myproyect.gestornovelasnjr.gestor_novelas.DB.NovelDao;
-import com.myproyect.gestornovelasnjr.gestor_novelas.DB.NovelDatabase;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.Novel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class NovelRepository {
-    private NovelDao novelDao;
-    private LiveData<List<Novel>> allNovels;
 
-    public NovelRepository(Application application) {
-        NovelDatabase database = NovelDatabase.getInstance(application);
-        novelDao = database.novelDao();
-        allNovels = novelDao.getAllNovels();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final CollectionReference novelCollection = db.collection("novels");
+
+    public LiveData<List<Novel>> getAllNovels() {
+        MutableLiveData<List<Novel>> novelsLiveData = new MutableLiveData<>();
+
+        novelCollection.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<Novel> novels = new ArrayList<>();
+                for (com.google.firebase.firestore.DocumentSnapshot document : task.getResult().getDocuments()) {
+                    Novel novel = document.toObject(Novel.class);
+                    novels.add(novel);
+                }
+                novelsLiveData.setValue(novels);
+            } else {
+                Log.e("Firestore", "Error getting novels: ", task.getException());
+            }
+        });
+
+        return novelsLiveData;
     }
 
     public void insert(Novel novel) {
-        new InsertNovelAsyncTask(novelDao).execute(novel);
+        novelCollection.add(novel).addOnSuccessListener(documentReference ->
+                Log.d("Firestore", "DocumentSnapshot added with ID: " + documentReference.getId())
+        ).addOnFailureListener(e ->
+                Log.e("Firestore", "Error adding novel", e)
+        );
     }
 
     public void delete(Novel novel) {
-        new DeleteNovelAsyncTask(novelDao).execute(novel);
-    }
-
-    public void update(Novel novel) {
-        new UpdateNovelAsyncTask(novelDao).execute(novel);
-    }
-
-    public LiveData<List<Novel>> getAllNovels() {
-        return allNovels;
-    }
-
-    private static class InsertNovelAsyncTask {
-        private NovelDao novelDao;
-
-        private InsertNovelAsyncTask(NovelDao novelDao) {
-            this.novelDao = novelDao;
-        }
-
-        public void execute(Novel novel) {
-        }
-    }
-
-    private static class DeleteNovelAsyncTask extends AsyncTask<Novel, Void, Void> {
-        private NovelDao novelDao;
-
-        private DeleteNovelAsyncTask(NovelDao novelDao) {
-            this.novelDao = novelDao;
-        }
-
-        @Override
-        protected Void doInBackground(Novel... novels) {
-            novelDao.delete(novels[0]);
-            return null;
-        }
-    }
-
-    private static class UpdateNovelAsyncTask extends AsyncTask<Novel, Void, Void> {
-        private NovelDao novelDao;
-
-        private UpdateNovelAsyncTask(NovelDao novelDao) {
-            this.novelDao = novelDao;
-        }
-
-        @Override
-        protected Void doInBackground(Novel... novels) {
-            novelDao.update(novels[0]);
-            return null;
-        }
+        novelCollection.whereEqualTo("title", novel.getTitle())
+                .get().addOnSuccessListener(querySnapshot -> {
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        novelCollection.document(doc.getId()).delete();
+                    }
+                }).addOnFailureListener(e -> Log.e("Firestore", "Error deleting novel", e));
     }
 }

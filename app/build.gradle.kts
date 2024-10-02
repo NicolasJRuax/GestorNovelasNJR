@@ -1,10 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
 
+    id("com.google.gms.google-services")
+
 }
 
 android {
-    namespace = "com.myproyect.gestionnovelas"
+    namespace = "com.myproyect.gestornovelasnjr"
     compileSdk = 34
 
     defaultConfig {
@@ -13,7 +15,7 @@ android {
                 argument("room.schemaLocation", "$projectDir/schemas")
             }
         }
-        applicationId = "com.myproyect.gestionnovelas"
+        applicationId = "com.myproyect.gestornovelasnjr"
         minSdk = 30
         targetSdk = 34
         versionCode = 1
@@ -39,9 +41,10 @@ android {
 
 dependencies {
     // Room para la base de datos
-    implementation ("androidx.room:room-runtime:2.5.0")
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-firestore")
 
-    annotationProcessor ("androidx.room:room-compiler:2.5.0")
+    implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
     implementation(libs.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)

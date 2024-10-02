@@ -13,7 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.myproyect.gestionnovelas.R;
+import com.myproyect.gestornovelasnjr.R;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.Novel;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.NovelAdapter;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.NovelViewModel;
