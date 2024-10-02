@@ -25,6 +25,7 @@ public class NovelViewModel extends AndroidViewModel {
         repository.delete(novel);
     }
 
+
     public LiveData<List<Novel>> getAllNovels() {
         return allNovels;
     }

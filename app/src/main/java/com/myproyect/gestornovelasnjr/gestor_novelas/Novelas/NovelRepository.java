@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.Novel;
@@ -21,21 +22,28 @@ public class NovelRepository {
     public LiveData<List<Novel>> getAllNovels() {
         MutableLiveData<List<Novel>> novelsLiveData = new MutableLiveData<>();
 
-        novelCollection.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
+        novelCollection.addSnapshotListener((querySnapshot, e) -> {
+            if (e != null) {
+                Log.e("Firestore", "Listen failed.", e);
+                return;
+            }
+            if (querySnapshot != null) {
                 List<Novel> novels = new ArrayList<>();
-                for (com.google.firebase.firestore.DocumentSnapshot document : task.getResult().getDocuments()) {
+                for (DocumentSnapshot document : querySnapshot.getDocuments()) {
                     Novel novel = document.toObject(Novel.class);
+                    novel.setId(document.getId()); // Asegúrate de asignar el ID
                     novels.add(novel);
                 }
                 novelsLiveData.setValue(novels);
             } else {
-                Log.e("Firestore", "Error getting novels: ", task.getException());
+                Log.d("Firestore", "No data received.");
+                novelsLiveData.setValue(new ArrayList<>());
             }
         });
 
         return novelsLiveData;
     }
+
 
     public void insert(Novel novel) {
         novelCollection.add(novel).addOnSuccessListener(documentReference ->
@@ -46,11 +54,18 @@ public class NovelRepository {
     }
 
     public void delete(Novel novel) {
-        novelCollection.whereEqualTo("title", novel.getTitle())
-                .get().addOnSuccessListener(querySnapshot -> {
-                    for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        novelCollection.document(doc.getId()).delete();
-                    }
-                }).addOnFailureListener(e -> Log.e("Firestore", "Error deleting novel", e));
+        if (novel.getId() != null) {
+            novelCollection.document(novel.getId())
+                    .delete()
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("Firestore", "Novela eliminada con éxito");
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("Firestore", "Error al eliminar la novela", e);
+                    });
+        } else {
+            Log.e("Firestore", "No se puede eliminar la novela: ID nulo");
+        }
     }
+
 }

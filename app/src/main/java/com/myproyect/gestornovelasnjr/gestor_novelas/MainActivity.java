@@ -35,8 +35,11 @@ public class MainActivity extends AppCompatActivity implements NovelAdapter.OnDe
         EditText editTextAuthor = dialogView.findViewById(R.id.editTextAuthor);
         EditText editTextYear = dialogView.findViewById(R.id.editTextYear);
         EditText editTextSynopsis = dialogView.findViewById(R.id.editTextSynopsis);
+        Button buttonAddNovel = dialogView.findViewById(R.id.buttonAddNovel);
 
-        builder.setPositiveButton("Agregar", (dialog, which) -> {
+        AlertDialog dialog = builder.create();
+
+        buttonAddNovel.setOnClickListener(v -> {
             String title = editTextTitle.getText().toString();
             String author = editTextAuthor.getText().toString();
             int year;
@@ -58,11 +61,9 @@ public class MainActivity extends AppCompatActivity implements NovelAdapter.OnDe
             }
         });
 
-        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
-
-        AlertDialog dialog = builder.create();
         dialog.show();
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,4 +98,5 @@ public class MainActivity extends AppCompatActivity implements NovelAdapter.OnDe
                 .setNegativeButton("No", null)
                 .show();
     }
+
 }
