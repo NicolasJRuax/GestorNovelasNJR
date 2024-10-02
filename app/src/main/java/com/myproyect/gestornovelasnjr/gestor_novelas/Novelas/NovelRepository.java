@@ -1,7 +1,7 @@
 package com.myproyect.gestornovelasnjr.gestor_novelas.Novelas;
 
-
 import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -9,7 +9,6 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.Novel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +18,7 @@ public class NovelRepository {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private final CollectionReference novelCollection = db.collection("novels");
 
+    // Método para obtener todas las novelas
     public LiveData<List<Novel>> getAllNovels() {
         MutableLiveData<List<Novel>> novelsLiveData = new MutableLiveData<>();
 
@@ -27,17 +27,14 @@ public class NovelRepository {
                 Log.e("Firestore", "Listen failed.", e);
                 return;
             }
+
             if (querySnapshot != null) {
                 List<Novel> novels = new ArrayList<>();
                 for (DocumentSnapshot document : querySnapshot.getDocuments()) {
                     Novel novel = document.toObject(Novel.class);
-                    novel.setId(document.getId()); // Asegúrate de asignar el ID
                     novels.add(novel);
                 }
                 novelsLiveData.setValue(novels);
-            } else {
-                Log.d("Firestore", "No data received.");
-                novelsLiveData.setValue(new ArrayList<>());
             }
         });
 
@@ -45,6 +42,8 @@ public class NovelRepository {
     }
 
 
+
+    // Método para insertar una novela
     public void insert(Novel novel) {
         novelCollection.add(novel).addOnSuccessListener(documentReference ->
                 Log.d("Firestore", "DocumentSnapshot added with ID: " + documentReference.getId())
@@ -53,19 +52,31 @@ public class NovelRepository {
         );
     }
 
+    // Método para eliminar una novela
     public void delete(Novel novel) {
-        if (novel.getId() != null) {
-            novelCollection.document(novel.getId())
-                    .delete()
-                    .addOnSuccessListener(aVoid -> {
-                        Log.d("Firestore", "Novela eliminada con éxito");
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("Firestore", "Error al eliminar la novela", e);
-                    });
-        } else {
-            Log.e("Firestore", "No se puede eliminar la novela: ID nulo");
-        }
+        novelCollection.whereEqualTo("title", novel.getTitle())
+                .get().addOnSuccessListener(querySnapshot -> {
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        novelCollection.document(doc.getId()).delete();
+                    }
+                }).addOnFailureListener(e -> Log.e("Firestore", "Error deleting novel", e));
     }
+
+    public void syncNovels() {
+        novelCollection.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<Novel> novels = new ArrayList<>();
+                for (DocumentSnapshot document : task.getResult().getDocuments()) {
+                    Novel novel = document.toObject(Novel.class);
+                    novels.add(novel);
+                }
+                // Aquí puedes hacer algo con la lista de novelas, como actualizar la UI o guardarlas localmente
+                Log.d("Sync", "Datos sincronizados correctamente");
+            } else {
+                Log.e("Sync", "Error al sincronizar los datos", task.getException());
+            }
+        });
+    }
+
 
 }

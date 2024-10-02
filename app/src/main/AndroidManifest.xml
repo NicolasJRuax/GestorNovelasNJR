@@ -1,13 +1,38 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" package="com.myproyect.gestornovelasnjr">
-    <application android:allowBackup="true" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.GestorNovelasNJR" tools:targetApi="31">
-        <!--   Declarar la actividad principal (MainActivity)   -->
-        <activity android:name="com.myproyect.gestornovelasnjr.gestor_novelas.MainActivity" android:exported="true">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.myproyect.gestornovelasnjr">
+
+    <!-- Permisos necesarios -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Gestor de Novelas"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+        <activity android:name=".gestor_novelas.MainActivity"
+            android:exported="true">
             <intent-filter>
-                <!--   Indicar que esta es la actividad principal   -->
-                <action android:name="android.intent.action.MAIN"/>
-                <!--   Indicar que aparece en el lanzador de aplicaciones   -->
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Registro del ConnectivityReceiver -->
+        <receiver android:name=".gestor_novelas.Sync.ConnectivityReceiver"
+            android:exported="true">  <!-- Establece a true si es accesible desde otras apps -->
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Registro del SyncDataReceiver -->
+        <receiver android:name=".gestor_novelas.Sync.SyncDataReceiver"
+            android:exported="false"/>  <!-- Este es interno, por lo tanto, lo dejamos como false -->
+
     </application>
+
 </manifest>

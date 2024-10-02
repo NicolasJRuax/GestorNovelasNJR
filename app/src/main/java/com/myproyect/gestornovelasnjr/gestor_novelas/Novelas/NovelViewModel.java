@@ -4,6 +4,7 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import com.myproyect.gestornovelasnjr.gestor_novelas.Sync.SyncDataTask;
 
 import java.util.List;
 
@@ -25,8 +26,12 @@ public class NovelViewModel extends AndroidViewModel {
         repository.delete(novel);
     }
 
-
     public LiveData<List<Novel>> getAllNovels() {
         return allNovels;
+    }
+
+    // Método para sincronizar las novelas
+    public void syncNovels() {
+        new SyncDataTask(getApplication()).execute();
     }
 }
