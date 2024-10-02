@@ -25,11 +25,16 @@
 
         <!-- Registro del ConnectivityReceiver -->
         <receiver android:name=".gestor_novelas.Sync.ConnectivityReceiver"
+
             android:exported="true">  <!-- Establece a true si es accesible desde otras apps -->
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
+
         </receiver>
+
+        <receiver android:name=".gestor_novelas.Sync.SyncAlarmReceiver"
+            android:exported="false" />
 
         <!-- Registro del SyncDataReceiver -->
         <receiver android:name=".gestor_novelas.Sync.SyncDataReceiver"

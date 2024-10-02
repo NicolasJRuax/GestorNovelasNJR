@@ -1,5 +1,7 @@
 package com.myproyect.gestornovelasnjr.gestor_novelas;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.myproyect.gestornovelasnjr.R;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.Novel;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.NovelAdapter;
+import com.myproyect.gestornovelasnjr.gestor_novelas.Sync.SyncAlarmReceiver;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Sync.SyncDataTask;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.NovelViewModel;
 
@@ -33,6 +36,18 @@ public class MainActivity extends AppCompatActivity {
     private NovelAdapter novelAdapter;
     private NovelViewModel novelViewModel;
     private BroadcastReceiver syncReceiver;
+
+
+    private void scheduleSyncAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, SyncAlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        long interval = AlarmManager.INTERVAL_HALF_DAY; // Cada 12 horas
+        long triggerAtMillis = System.currentTimeMillis() + interval;
+
+        alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, triggerAtMillis, interval, pendingIntent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
 
                     novelAdapter.setNovels(syncedNovels);
                     Toast.makeText(context, "Sincronización completada", Toast.LENGTH_SHORT).show();
+                    scheduleSyncAlarm();
                 }
             }
         };
