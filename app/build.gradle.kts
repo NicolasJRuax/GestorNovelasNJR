@@ -43,11 +43,16 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata:2.6.2")
-
+    testImplementation ("junit:junit:4.13.2")
+    testImplementation ("org.mockito:mockito-core:4.11.0")
+    testImplementation ("androidx.test:core:1.5.0")
+    testImplementation ("org.robolectric:robolectric:4.9.2")
 
 
     implementation("androidx.work:work-runtime:2.8.1")
     implementation("androidx.core:core-ktx:1.12.0")
+    testImplementation(libs.junit.junit)
+    testImplementation(libs.junit.jupiter)
 
     // Otras dependencias...
 }
