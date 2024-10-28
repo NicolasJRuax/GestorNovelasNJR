@@ -27,23 +27,21 @@ import com.myproyect.gestornovelasnjr.gestor_novelas.Sync.SyncDataTask;
 import com.myproyect.gestornovelasnjr.gestor_novelas.Novelas.NovelViewModel;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button buttonAddBook, buttonSyncData;
+    private Button buttonAddBook, buttonSyncData, buttonSettings;
     private RecyclerView recyclerView;
     private NovelAdapter novelAdapter;
     private NovelViewModel novelViewModel;
     private BroadcastReceiver syncReceiver;
-
 
     private void scheduleSyncAlarm() {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, SyncAlarmReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
-        long interval = AlarmManager.INTERVAL_HALF_DAY; // Cada 12 horas
+        long interval = AlarmManager.INTERVAL_HALF_DAY;
         long triggerAtMillis = System.currentTimeMillis() + interval;
 
         alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, triggerAtMillis, interval, pendingIntent);
@@ -51,34 +49,40 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeUtils.applyDarkMode(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         buttonAddBook = findViewById(R.id.buttonAddBook);
         buttonSyncData = findViewById(R.id.buttonSyncData);
+        buttonSettings = findViewById(R.id.buttonSettings); // Botón de configuración
         recyclerView = findViewById(R.id.recyclerView);
 
-        // Configurar RecyclerView
+        buttonAddBook.setOnClickListener(v -> showAddNovelDialog());
+        buttonSyncData.setOnClickListener(v -> {
+            Toast.makeText(MainActivity.this, "Sincronizando datos...", Toast.LENGTH_SHORT).show();
+            new SyncDataTask(MainActivity.this).execute();
+        });
+        buttonSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SettingActivity.class);
+            startActivity(intent);
+        });
+
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setHasFixedSize(true);
         novelAdapter = new NovelAdapter(this, novel -> {
-            // Eliminar novela al hacer clic en el botón eliminar
             novelViewModel.delete(novel);
             Toast.makeText(this, "Novela eliminada: " + novel.getTitle(), Toast.LENGTH_SHORT).show();
         });
         recyclerView.setAdapter(novelAdapter);
 
-        // Obtener ViewModel
         novelViewModel = new ViewModelProvider(this).get(NovelViewModel.class);
-
-        // Observar los cambios en la lista de novelas
         novelViewModel.getAllNovels().observe(this, novels -> {
             if (novels != null) {
                 novelAdapter.setNovels(novels);
             }
         });
 
-        // Registrar receptor de sincronización
         syncReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -87,8 +91,6 @@ public class MainActivity extends AppCompatActivity {
                     if (syncedNovels != null) {
                         novelAdapter.setNovels(syncedNovels);
                     }
-
-                    novelAdapter.setNovels(syncedNovels);
                     Toast.makeText(context, "Sincronización completada", Toast.LENGTH_SHORT).show();
                     scheduleSyncAlarm();
                 }
@@ -99,24 +101,14 @@ public class MainActivity extends AppCompatActivity {
         } else {
             registerReceiver(syncReceiver, new IntentFilter("com.myproyect.gestornovelasnjr.SYNC_COMPLETE"));
         }
-
-        // Botón para agregar una nueva novela
-        buttonAddBook.setOnClickListener(v -> showAddNovelDialog());
-
-        // Botón para sincronizar datos
-        buttonSyncData.setOnClickListener(v -> {
-            Toast.makeText(MainActivity.this, "Sincronizando datos...", Toast.LENGTH_SHORT).show();
-            new SyncDataTask(MainActivity.this).execute();
-        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(syncReceiver); // Desregistrar el receptor al destruir la actividad
+        unregisterReceiver(syncReceiver);
     }
 
-    // Método para mostrar el diálogo de agregar novela
     private void showAddNovelDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Agregar Novela");
@@ -125,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
         builder.setView(customLayout);
 
         builder.setPositiveButton("Agregar", (dialog, which) -> {
-            // Obtener los datos del diálogo
             EditText editTextTitle = customLayout.findViewById(R.id.editTextTitle);
             EditText editTextAuthor = customLayout.findViewById(R.id.editTextAuthor);
             EditText editTextYear = customLayout.findViewById(R.id.editTextYear);
@@ -143,9 +134,8 @@ public class MainActivity extends AppCompatActivity {
             String synopsis = editTextSynopsis.getText().toString();
 
             if (!title.isEmpty() && !author.isEmpty() && year > 0 && !synopsis.isEmpty()) {
-                // Crear la nueva novela
                 Novel novel = new Novel(title, author, year, synopsis);
-                novelViewModel.insert(novel); // Insertar la novela en la base de datos
+                novelViewModel.insert(novel);
                 Toast.makeText(MainActivity.this, "Novela añadida", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(MainActivity.this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
@@ -153,11 +143,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
-
-        // Mostrar el diálogo
         builder.create().show();
     }
 }
-
 
 
