@@ -10,8 +10,9 @@
 
         <!-- Fondo y Colores de Texto -->
         <item name="android:windowBackground">@color/colorBackgroundNight</item>
-        <item name="android:textColor">@color/white</item>
-        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColor">@color/textColorPrimaryNight</item>
+        <item name="android:textColorPrimary">@color/textColorSecondaryNight</item>
+
     </style>
 
 </resources>
